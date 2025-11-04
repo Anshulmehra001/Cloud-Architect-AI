@@ -225,7 +225,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Author
 
 **Aniket Mehra**
-- GitHub: [@anshulmehra](https://github.com/anshulmehra)
+- GitHub: [@Anshulmehra001](https://github.com/Anshulmehra001)
 - Email: aniketmehra715@gmail.com
 - Project: [Cloud-Architect-AI](https://github.com/Anshulmehra001/Cloud-Architect-AI)
 
