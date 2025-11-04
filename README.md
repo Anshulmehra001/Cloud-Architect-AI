@@ -24,8 +24,8 @@ An AI-powered web application that provides Google Cloud architecture recommenda
 
 1. **Clone and setup**:
    ```bash
-   git clone <repository-url>
-   cd cloud-architect-ai
+   git clone https://github.com/Anshulmehra001/Cloud-Architect-AI.git
+   cd Cloud-Architect-AI
    ```
 
 2. **Install dependencies**:
