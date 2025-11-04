@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Architect AI - Google Cloud Architecture Recommendations</title>
+    <meta name="description" content="Get AI-powered Google Cloud architecture recommendations for your software projects">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Cloud Architect AI</h1>
+            <p class="subtitle">Get AI-powered Google Cloud architecture recommendations</p>
+        </header>
+
+        <section class="input-section">
+            <form id="architectureForm" novalidate>
+                <div class="form-group">
+                    <label for="projectDescription">
+                        Project Description
+                        <span class="required" aria-label="required">*</span>
+                    </label>
+                    <textarea 
+                        id="projectDescription" 
+                        name="prompt" 
+                        placeholder="Describe your software project, including its purpose, expected scale, key features, and any specific requirements..."
+                        required
+                        minlength="10"
+                        maxlength="5000"
+                        rows="6"
+                        aria-describedby="description-help description-error"
+                    ></textarea>
+                    <div id="description-help" class="help-text">
+                        Minimum 10 characters. Be specific about your project's requirements, expected traffic, and key features.
+                    </div>
+                    <div id="description-error" class="error-message" role="alert" aria-live="polite"></div>
+                </div>
+
+                <button type="submit" id="generateBtn" class="generate-btn">
+                    <span class="btn-text">Generate Architecture</span>
+                    <span class="btn-loading" aria-hidden="true">Generating...</span>
+                </button>
+            </form>
+        </section>
+
+        <section id="resultSection" class="result-section" aria-live="polite">
+            <h2>Architecture Recommendation</h2>
+            <div id="resultContent" class="result-content"></div>
+        </section>
+
+        <section id="errorSection" class="error-section" role="alert" aria-live="assertive">
+            <h2>Error</h2>
+            <div id="errorContent" class="error-content"></div>
+        </section>
+    </main>
+
+    <script>
+        // Form and UI elements
+        const form = document.getElementById('architectureForm');
+        const textarea = document.getElementById('projectDescription');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultSection = document.getElementById('resultSection');
+        const resultContent = document.getElementById('resultContent');
+        const errorSection = document.getElementById('errorSection');
+        const errorContent = document.getElementById('errorContent');
+        const descriptionError = document.getElementById('description-error');
+
+        // State management
+        let isLoading = false;
+
+        // Form validation
+        function validateInput(value) {
+            if (!value || value.trim().length < 10) {
+                return 'Please enter at least 10 characters describing your project.';
+            }
+            if (value.length > 5000) {
+                return 'Please keep your description under 5000 characters.';
+            }
+            return null;
+        }
+
+        function showError(message, isFormError = false) {
+            if (isFormError) {
+                descriptionError.textContent = message;
+                descriptionError.style.display = 'block';
+                textarea.setAttribute('aria-invalid', 'true');
+            } else {
+                errorContent.textContent = message;
+                errorSection.style.display = 'block';
+                resultSection.style.display = 'none';
+            }
+        }
+
+        function clearErrors() {
+            descriptionError.style.display = 'none';
+            descriptionError.textContent = '';
+            textarea.setAttribute('aria-invalid', 'false');
+            errorSection.style.display = 'none';
+        }
+
+        function setLoadingState(loading) {
+            isLoading = loading;
+            generateBtn.disabled = loading;
+            generateBtn.classList.toggle('loading', loading);
+            
+            if (loading) {
+                generateBtn.setAttribute('aria-label', 'Generating architecture recommendation, please wait');
+            } else {
+                generateBtn.removeAttribute('aria-label');
+            }
+        }
+
+        function displayResult(response) {
+            resultContent.textContent = response;
+            resultSection.style.display = 'block';
+            errorSection.style.display = 'none';
+            
+            // Scroll to result
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Form submission handler
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (isLoading) return;
+            
+            const prompt = textarea.value.trim();
+            clearErrors();
+            
+            // Validate input
+            const validationError = validateInput(prompt);
+            if (validationError) {
+                showError(validationError, true);
+                textarea.focus();
+                return;
+            }
+            
+            setLoadingState(true);
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                // Safely read response: handle empty or non-JSON bodies
+                let data = null;
+                let rawText = '';
+                try {
+                    rawText = await response.text();
+                    data = rawText ? JSON.parse(rawText) : null;
+                } catch (parseErr) {
+                    // Non-JSON response body; fall back to raw text
+                    console.warn('Non-JSON response from /generate:', parseErr);
+                }
+
+                if (response.ok && data && data.status === 'success') {
+                    displayResult(data.response);
+                } else {
+                    // Prefer server-provided error; otherwise show status or raw text
+                    const errorMessage = (data && data.error)
+                        ? data.error
+                        : (rawText && rawText.trim().length > 0)
+                            ? rawText
+                            : `Request failed (${response.status}${response.statusText ? ' ' + response.statusText : ''}). Please try again.`;
+                    showError(errorMessage);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showError('Connection error. Please check your internet connection and try again.');
+            } finally {
+                setLoadingState(false);
+            }
+        });
+
+        // Real-time input validation
+        textarea.addEventListener('input', function() {
+            if (descriptionError.style.display === 'block') {
+                const validationError = validateInput(this.value.trim());
+                if (!validationError) {
+                    clearErrors();
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            textarea.focus();
+        });
+    </script>
+</body>
+</html>
